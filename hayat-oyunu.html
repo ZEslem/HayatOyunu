@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Hayat Oyunu</title>
+</head>
+
+<body>
+	<div style="display: flex;">
+		<h1>Hayat Oyunu</h1>
+		<div style="padding-left: 30px; display:flex; align-items:center; gap: 10px">
+			<label for="isim">Adınız :</label>
+			<input type="text" id="isim" name="isim">
+			<input type="button" value="Başlat" onclick="baslat()">
+			<input type="button" id="duraklat" value="Durdur" onclick="duraklat()">
+		</div>
+	</div>
+	<h2 id="rapor" style="margin: 0"></h2>
+	
+	<canvas id="kanvas" width="600" height="300" style="border:2px solid lightgrey;">
+		Tarayıcınız HTML5 desteklememektedir.
+	</canvas>
+	<script>
+		const harflerinHucreTemsilleri = {
+			'A': [[1,1,1,1,1],[1,0,1,0,0],[1,0,1,0,0],[1,0,1,0,0],[1,1,1,1,1]],
+			'B': [[1,1,1,1,1],[1,0,1,0,1],[1,0,1,0,1],[1,0,1,0,1],[0,1,0,1,0]],
+			'C': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,0,0,0,0]],
+			'Ç': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,1,1],[1,0,0,0,1],[0,0,0,0,0]],
+			'D': [[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+			'E': [[1,1,1,1,1],[1,0,1,0,1],[1,0,1,0,1],[1,0,1,0,1],[1,0,1,0,1]],
+			'F': [[1,1,1,1,1],[1,0,1,0,0],[1,0,1,0,0],[1,0,1,0,0],[1,0,1,0,0]],
+			'G': [[0,1,1,1,0],[1,0,0,0,1],[1,0,1,0,1],[1,0,1,0,1],[0,0,1,1,0]],
+			'Ğ': [[0,1,1,1,0],[1,0,0,0,1],[0,0,1,0,1],[1,0,1,0,1],[0,0,1,1,0]],
+			'H': [[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1]],
+			'I': [[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
+			'İ': [[0,0,0,0,0],[0,0,0,0,0],[1,0,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
+			'J': [[0,0,0,1,0],[0,0,0,0,1],[0,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0]],
+			'K': [[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,1,0,1,0],[1,0,0,0,1]],
+			'L': [[1,1,1,1,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1]],
+			'M': [[1,1,1,1,1],[0,1,0,0,0],[0,0,1,0,0],[0,1,0,0,0],[1,1,1,1,1]],
+			'N': [[1,1,1,1,1],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[1,1,1,1,1]],
+			'O': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+			'Ö': [[0,1,1,1,0],[1,1,0,0,1],[0,1,0,0,1],[1,1,0,0,1],[0,1,1,1,0]],
+			'P': [[1,1,1,1,1],[1,0,1,0,0],[1,0,1,0,0],[1,1,1,0,0],[0,0,0,0,0]],
+			'R': [[1,1,1,1,1],[1,0,1,0,0],[1,0,1,1,0],[1,1,1,0,1],[0,0,0,0,0]],
+			'S': [[1,1,1,0,1],[1,0,1,0,1],[1,0,1,0,1],[1,0,1,1,1],[0,0,0,0,0]],
+			'Ş': [[1,1,1,0,1],[1,0,1,0,0],[1,0,1,0,1],[1,0,1,1,1],[0,0,0,0,0]],
+			'T': [[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0]],
+			'U': [[1,1,1,1,0],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[1,1,1,1,0]],
+			'Ü': [[1,0,1,1,0],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[1,0,1,1,0]],
+			'V': [[1,1,0,0,0],[0,0,1,1,0],[0,0,0,0,1],[0,0,1,1,0],[1,1,0,0,0]],
+			'Y': [[1,0,0,0,0],[0,1,0,0,0],[0,0,1,1,1],[0,1,0,0,0],[1,0,0,0,0]],
+			'Z': [[1,0,0,0,1],[1,0,0,1,1],[1,0,1,0,1],[1,1,0,0,1],[1,0,0,0,1]],
+		}
+		
+		const ozel = {
+			planorler: [
+				[24,0],
+				[22,1],[24,1],
+				[12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+				[11,3],[15,3],[20,3],[21,3],[34,3],[35,3],
+				[0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+				[0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],
+				[10,6],[16,6],[24,6],
+				[11,7],[15,7],
+				[12,8],[13,8],
+			]
+		}
+		
+		const isimGiris = document.getElementById('isim')
+		const duraklatButonu = document.getElementById('duraklat')
+		const raporAlani = document.getElementById('rapor')
+		const kanvas = document.getElementById('kanvas')
+		const kanvasIcerik = kanvas.getContext('2d')
+		let animasyon
+		
+		const satirSayisi = 60
+		const sutunSayisi = 30
+		let hucreler = []
+		const hucreHafizasi = []
+		const maksimumHafiza = 200
+		let sure = 0
+		
+		function isaretle() {
+			if (sure >= 0)
+				sure++
+			const hucrelerYeni = []
+			for (let y = 0; y < sutunSayisi; y++) {
+				for (let x = 0; x < satirSayisi; x++) {
+					if (!Array.isArray(hucrelerYeni[x]))
+						hucrelerYeni[x] = []
+					
+					const hayattakiKomsular = 0
+						+ (x < satirSayisi - 1 && y < sutunSayisi - 1 ? hucreler[x+1][y+1] : 0)
+						+ (y < sutunSayisi - 1 ? hucreler[x][y+1] : 0)
+						+ (x > 0 && y < sutunSayisi - 1 ? hucreler[x-1][y+1] : 0)
+						+ (x < satirSayisi - 1 ? hucreler[x+1][y] : 0)
+						+ (x > 0 ? hucreler[x-1][y] : 0)
+						+ (x < satirSayisi - 1 && y > 0 ? hucreler[x+1][y-1] : 0)
+						+ (y > 0 ? hucreler[x][y-1] : 0)
+						+ (x > 0 && y > 0 ? hucreler[x-1][y-1] : 0)
+					
+					if (hayattakiKomsular === 2)
+						hucrelerYeni[x][y] = hucreler[x][y];
+					else if (hayattakiKomsular === 3)
+						hucrelerYeni[x][y] = 1
+					else
+						hucrelerYeni[x][y] = 0
+				}
+			}
+			return durumKarsilastirma(hucrelerYeni)
+		}
+		
+		function durumKarsilastirma(hucrelerYeni) {
+			if (sure > 0) {
+				hucreHafizasi.push(hucreler)
+				for (let i = hucreHafizasi.length - 1; i >= 0; i--) {
+					if (hucreleriKarsilastir(hucreHafizasi[i], hucrelerYeni))
+						return -1 * (i - hucreHafizasi.length)
+				}
+				if (hucreHafizasi.length > maksimumHafiza)
+					hucreHafizasi.shift()
+			}
+			hucreler = hucrelerYeni
+			return false
+		}
+		
+		function hucreleriKarsilastir(hucreler1, hucreler2) {
+			for (let y = 0; y < sutunSayisi; y++) {
+				for (let x = 0; x < satirSayisi; x++) {
+					if (hucreler1[x][y] !== hucreler2[x][y])
+						return false
+				}
+			}
+			return true
+		}
+		
+		function sifirla(rastgele) {
+			sure = 0
+			for (let y = 0; y < sutunSayisi; y++) {
+				for (let x = 0; x < satirSayisi; x++) {
+					if (!Array.isArray(hucreler[x]))
+						hucreler[x] = []
+					hucreler[x][y] = Math.random() > rastgele ? 0 : 1
+				}
+			}
+		}
+		
+		function yaz(yazi) {
+			let baslamaMesafesiX = 4
+			let baslamaMesafesiY = 4
+			for (let i = 0; i < yazi.length; i++) {
+				const karakter = yazi[i]
+				if (karakter === ' ') {
+					baslamaMesafesiX = 4
+					baslamaMesafesiY += 6
+					continue
+				}
+				const karakterHucreleri = harflerinHucreTemsilleri[karakter]
+				if (karakterHucreleri) {
+					if (baslamaMesafesiX + 5 > satirSayisi || baslamaMesafesiY + 5 > sutunSayisi)
+						break;
+					for (let x = 0; x < karakterHucreleri.length; x++) {
+						const sutun = karakterHucreleri[x]
+						for (let y = 0; y < sutun.length; y++) {
+							hucreler[baslamaMesafesiX + x][baslamaMesafesiY + y] = karakterHucreleri[x][y]
+						}
+					}
+					baslamaMesafesiX += 6
+				}
+			}
+		}
+		
+		function ozelCiz(sekil) {
+			let baslamaMesafesiX = 1
+			let baslamaMesafesiY = 1
+			for (let i = 0; i < sekil.length; i++) {
+				let koor = sekil[i]
+				hucreler[baslamaMesafesiX + koor[0]][baslamaMesafesiY + koor[1]] = 1
+			}
+		}
+		
+		function resmet() {
+			kanvasIcerik.clearRect(0, 0, kanvas.width, kanvas.height)
+			for (let y = 0; y < sutunSayisi; y++) {
+				for (let x = 0; x < satirSayisi; x++) {
+					if (hucreler[x][y] === 1)
+						kanvasIcerik.fillStyle = '#80ffcc'
+					else
+						kanvasIcerik.fillStyle = '#101010'
+					kanvasIcerik.fillRect(10 * x, 10 * y, 10, 10)
+				}
+			}
+		}
+		
+		function tahtayiIlerlet() {
+			let tekrar = isaretle()
+			resmet()
+			if (tekrar) {
+				raporAlani.textContent = sure + ". adımda " + (tekrar > 1 ? ' tekrara düştü. Tekrar peryodu: ' + tekrar : ' sona erdi.')
+				sure = -1
+			}
+			animasyon = window.requestAnimationFrame(tahtayiIlerlet)
+		}
+		
+		function baslat() {
+			durdur()
+			duraklatButonu.value = 'Durdur'
+			raporAlani.textContent = ''
+			hucreHafizasi.length = 0
+			const yazi = isimGiris.value
+			if (yazi) {
+				sifirla(0)
+				if (ozel[yazi])
+					ozelCiz(ozel[yazi])
+				else
+					yaz(yazi.toLocaleUpperCase('tr-TR'))
+				resmet()
+				setTimeout(tahtayiIlerlet, 2000)
+			}
+		}
+		
+		function durdur() {
+			window.cancelAnimationFrame(animasyon)
+			animasyon = null
+		}
+		
+		function devam() {
+			if (!animasyon)
+				animasyon = window.requestAnimationFrame(tahtayiIlerlet)
+		}
+		
+		function duraklat() {
+			if (duraklatButonu.value === 'Durdur' && animasyon) {
+				durdur()
+				duraklatButonu.value = 'Devam'
+			}
+			else if (duraklatButonu.value === 'Devam' && !animasyon) {
+				devam()
+				duraklatButonu.value = 'Durdur'
+			}
+		}
+
+		window.onload = () => {
+			sifirla(0)
+			resmet()
+		}
+
+	</script>
+</body>
+
+</html>
